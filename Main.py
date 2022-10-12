@@ -3,8 +3,8 @@ import sys
 
 
 def MESI(n, input_file, cache_size, associativity, block_size):
-    print("MESI: " + n)
-    with open('blackscholes_0.data', 'r') as f:
+    print("MESI: " + str(n))
+    with open('/blackscholes_four/blackscholes_0.data', 'r') as f:
         f_contents = f.read()
         print(f_contents)
 
@@ -17,11 +17,7 @@ def Dragon(n, input_file, cache_size, associativity, block_size):
     
 
 
-
-
-
-
-if len(sys.argv != 5):
+if len(sys.argv) != 6:
     raise Exception("Invalid number of arguments")
 
 protocol = sys.argv[1]
