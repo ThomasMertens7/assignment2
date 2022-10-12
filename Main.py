@@ -4,7 +4,7 @@ import sys
 
 def MESI(n, input_file, cache_size, associativity, block_size):
     print("MESI: " + str(n))
-    with open('/blackscholes_four/blackscholes_0.data', 'r') as f:
+    with open('./blackscholes_four/blackscholes_0.data', 'r') as f:
         f_contents = f.read()
         print(f_contents)
 
