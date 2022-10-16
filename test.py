@@ -1,10 +1,10 @@
-from multiprocessing import *
+from multiprocessing import Process
 import sys
 import math
 from Constants import *
 
 
-def MESI(n, input_file, cache_size, associativity, block_siz, d0, d1, d2, d3):
+def MESI(n, input_file, cache_size, associativity, block_size):
     print("MESI: " + str(n))
 
     with open('./' + input_file + '_four/' + input_file + '_' + str(n) + '.data', 'r') as f:
@@ -114,43 +114,4 @@ def MESI(n, input_file, cache_size, associativity, block_siz, d0, d1, d2, d3):
 def getIndex(address, block_size, modcache):
     return math.floor((int(address) / block_size) % modcache)
           
-
-def Dragon(n, input_file, cache_size, associativity, block_size):
-    print("Dragon: " + n)
-    
-
-
-# if len(sys.argv) != 6:
-#     raise Exception("Invalid number of arguments.")
-
-# protocol = sys.argv[1]
-# input_file = sys.argv[2]
-# cache_size = sys.argv[3]
-# associativity = sys.argv[4]
-# block_size = sys.argv[5]
-
-protocol = "MESI"
-input_file = "blacksholes"
-cache_size = 4096
-associativity = 2
-block_size = 32
-
-manager = Manager()
-d = manager.list()
-
-if protocol == "MESI":
-    p = [None,None,None,None]
-    for n in range(4):
-        p[n] = Process(target=MESI, args=(n, input_file, cache_size, associativity, block_size, d))
-        p[n].start()
-        p[n].join()
-
-elif protocol == "Dragon":
-    p = [None,None,None,None]
-    for n in range(4):
-        p[n] = Process(target=Dragon, args=(n, input_file, cache_size, associativity, block_size))
-        p[n].start()
-        p[n].join()
-
-else:
-    raise Exception("Invalid protocol")
+print(MESI(0, 'blackscholes', 4096, 2, 32))
