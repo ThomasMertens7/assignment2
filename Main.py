@@ -4,112 +4,289 @@ import math
 from Constants import *
 
 
-def MESI(n, input_file, cache_size, associativity, block_siz, d0, d1, d2, d3):
+def MESI(n, input_file, block_size, modcache, cache):
     print("MESI: " + str(n))
 
+    # Open the file and read contents
     with open('./' + input_file + '_four/' + input_file + '_' + str(n) + '.data', 'r') as f:
         f_contents = f.readlines()
 
+    # Set up all the output variables
     cycle = 0
     compute_cycles = 0
     load_store_instructions = 0
     idle_cycles = 0
     misses_core = 0
-    load_instruction = 0
+    bus_transfers = 0
+    invalidations = 0
+    private_data_accesses = 0
+    shared_data_accesses = 0
 
-    extra_cycles = 0
+
+    # Set up help variables
     total_lines = len(f_contents)
 
-    modcache = int((int(cache_size) / int(block_size)) / int(associativity))
-    L1_cache = {}
-    for key in range(modcache):
-        L1_cache[key] = [[None, "I", 0] * int(associativity)]
-
-    current_assignment = ""
-
-    while cycle < total_lines:
-        if extra_cycles > 1:
+    def delay(extra_cycles):
+        while extra_cycles > 0:
             extra_cycles -= 1
-        
-        elif extra_cycles == 1:
-            extra_cycles = 0
-            if current_assignment == "M":
-                for i in L1_cache[getIndex(int(f_contents[cycle][2:-1], base=16), block_size, modcache)]:
-                    if i[0] == int(f_contents[cycle][2:-1], base=16):
-                        L1_cache[getIndex(int(f_contents[cycle][2:-1], base=16), block_size, modcache)].remove(i)
-                        i[1] = "M"
-                        L1_cache[getIndex(int(f_contents[cycle][2:-1], base=16), block_size, modcache)].append(i)
-                        break
-            elif len(current_assignment) > 0 and current_assignment[0] == "S":
-                L1_cache[getIndex(int(f_contents[cycle][2:-1], base=16), block_size, modcache)].remove(i)
-                i[0] = "S"
-                L1_cache[getIndex(int(f_contents[cycle][2:-1], base=16), block_size, modcache)].append(i)
-                L1_cache[j].remove(k)
-                k[0] = "S"
-                L1_cache[j].append(k)
 
-            elif len(current_assignment) > 0 and current_assignment[0] == "E":
-                L1_cache[getIndex(int(f_contents[cycle][2:-1], base=16), block_size, modcache)].pop(0)
-                i = [int(f_contents[cycle][2:-1], base=16), "M", 0]
-                L1_cache[getIndex(int(f_contents[cycle][2:-1], base=16), block_size, modcache)].append(i)
-            cycle += 1
-            current_assignment = ""
+    def change_state(element, cycle, move, core, idle_cycles, misses_core, bus_transfers, invalidations, private_data_accesses, shared_data_accesses):
+        if element[1] == "M":
+            if move == "PR":
+                private_data_accesses += 1
+                delay(CACHE_HIT)
+                idle_cycles += CACHE_HIT
+                q = cache[core]
+                try:
+                    q[getIndex(int(f_contents[cycle][2:-1], base=16), block_size, modcache)].remove(element)
+                except:
+                    q[getIndex(int(f_contents[cycle][2:-1], base=16), block_size, modcache)].pop(0)
+                q[getIndex(int(f_contents[cycle][2:-1], base=16), block_size, modcache)].append(element)
+                cache[core] = q
 
-        else:
-            if f_contents[cycle][0] == LOAD:
-                load_store_instructions += 1
-                for i in L1_cache[getIndex(int(f_contents[cycle][2:-1], base=16), block_size, modcache)]:
-                    if i[0] == f_contents[cycle][2:-1]:
-                        extra_cycles += CACHE_HIT
-                        idle_cycles += CACHE_HIT
-                        break
+            elif move == "PW":
+                private_data_accesses += 1
+                q = cache[core]
+                try:
+                    q[getIndex(int(f_contents[cycle][2:-1], base=16), block_size, modcache)].remove(element)
+                except:
+                    q[getIndex(int(f_contents[cycle][2:-1], base=16), block_size, modcache)].pop(0)
+                q[getIndex(int(f_contents[cycle][2:-1], base=16), block_size, modcache)].append(element)
+                cache[core] = q
 
-                    else:
-                        misses_core += 1
-                        tf = False
-                        for j in L1_cache.keys():
-                            if (j != L1_cache[getIndex(int(f_contents[cycle][2:-1], base=16), block_size, modcache)]) and (tf == False):
-                                for k in L1_cache[j]:
-                                    if (k[0] == f_contents[cycle][2:-1]) and (k[1] != "I") and (tf == False):
-                                        extra_cycles += (CACHE_TO_CACHE * block_size) + CACHE_HIT
-                                        idle_cycles += (CACHE_TO_CACHE * block_size) + CACHE_HIT
-                                        current_assignment = "S " + i + " " + j + " " + k
-                                        tf = True
-    
-                        if tf == False:
-                            extra_cycles += MEMORY_TO_CACHE + CACHE_HIT
-                            idle_cycles += MEMORY_TO_CACHE + CACHE_HIT
-                            current_assignment = "E"
+            elif move == "BR":
+                q = cache[core]
+                try:
+                    q[getIndex(element[0], block_size, modcache)].remove(element)
+                except:
+                    q[getIndex(element[0], block_size, modcache)].pop(0)
+                element[1] == "S"
+                q[getIndex(element[0], block_size, modcache)].append(element)
+                cache[core] = q
 
-            elif f_contents[cycle][0] == STORE:
-                tf = False
-                for i in L1_cache[getIndex(int(f_contents[cycle][2:-1], base=16), block_size, modcache)]:
-                    if i[0] == f_contents[cycle][2:-1] and tf == False:
-                        current_assignment = "M"
-                        tf = True
-                        #Should send message to other processors now
+            elif move == "BRX":
+                q = cache[core]
+                try:
+                    q[getIndex(element[0], block_size, modcache)].remove(element)
+                except:
+                    q[getIndex(element[0], block_size, modcache)].pop(0)
+                element[1] == "I"
+                q[getIndex(element[0], block_size, modcache)].append(element)
+                cache[core] = q
 
+        elif element[1] == "E":
+            if move == "PR":
+                private_data_accesses += 1
+                delay(CACHE_HIT)
+                idle_cycles += CACHE_HIT
+                q = cache[core]
+                try:
+                    q[getIndex(int(f_contents[cycle][2:-1], base=16), block_size, modcache)].remove(element)
+                except:
+                    q[getIndex(int(f_contents[cycle][2:-1], base=16), block_size, modcache)].pop(0)
+                q[getIndex(int(f_contents[cycle][2:-1], base=16), block_size, modcache)].append(element)
+                cache[core] = q
 
+            elif move == "PW":
+                private_data_accesses += 1
+                q = cache[core]
+                try:
+                    q[getIndex(int(f_contents[cycle][2:-1], base=16), block_size, modcache)].remove(element)
+                except:
+                    q[getIndex(int(f_contents[cycle][2:-1], base=16), block_size, modcache)].pop(0)
+                element[1] == "M"
+                q[getIndex(int(f_contents[cycle][2:-1], base=16), block_size, modcache)].append(element)
+                cache[core] = q
+
+            elif move == "BR":
+                q = cache[core]
+                try:
+                    q[getIndex(element[0], block_size, modcache)].remove(element)
+                except:
+                    q[getIndex(element[0], block_size, modcache)].pop(0)
+                element[1] == "S"
+                q[getIndex(element[0], block_size, modcache)].append(element)
+                cache[core] = q
+
+            elif move == "BRX":
+                q = cache[core]
+                try:
+                    q[getIndex(element[0], block_size, modcache)].remove(element)
+                except:
+                    q[getIndex(element[0], block_size, modcache)].pop(0)
+                element[1] == "I"
+                q[getIndex(element[0], block_size, modcache)].append(element)
+                cache[core] = q
                 
+        elif element[1] == "S":
+            if move == "PR":
+                shared_data_accesses += 1
+                delay(CACHE_HIT)
+                idle_cycles += CACHE_HIT
+                q = cache[core]
+                try:
+                    q[getIndex(int(f_contents[cycle][2:-1], base=16), block_size, modcache)].remove(element)
+                except:
+                    q[getIndex(int(f_contents[cycle][2:-1], base=16), block_size, modcache)].pop(0)
+                q[getIndex(int(f_contents[cycle][2:-1], base=16), block_size, modcache)].append(element)
+                cache[core] = q
 
-                    
+            if move == "PW":
+                shared_data_accesses += 1
+                q = cache[core]
+                try:
+                    q[getIndex(int(f_contents[cycle][2:-1], base=16), block_size, modcache)].remove(element)
+                except:
+                    q[getIndex(int(f_contents[cycle][2:-1], base=16), block_size, modcache)].pop(0)
+                element[1] == "M"
+                q[getIndex(int(f_contents[cycle][2:-1], base=16), block_size, modcache)].append(element)
+                cache[core] = q
+                for i in range(len(cache)):
+                    if i != core:
+                        for j in range(len(cache[i][getIndex(int(f_contents[cycle][2:-1], base=16), block_size, modcache)])):
+                            if cache[i][getIndex(int(f_contents[cycle][2:-1], base=16), block_size, modcache)][j][0] == int(f_contents[cycle][2:-1], base=16):
+                                invalidations += 1
+                                bus_transfers += 1
+                                change_state(cache[i][getIndex(int(f_contents[cycle][2:-1], base=16), block_size, modcache)][j], cycle, "BRX", i, idle_cycles, misses_core, bus_transfers, invalidations, private_data_accesses, shared_data_accesses)
 
-                  
+            elif move == "BRX":
+                q = cache[core]
+                try:
+                    q[getIndex(element[0], block_size, modcache)].remove(element)
+                except:
+                    q[getIndex(element[0], block_size, modcache)].pop(0)
+                element[1] = "I"
+                q[getIndex(element[0], block_size, modcache)].append(element)
+                cache[core] = q
 
+            elif move == "BR":
+                q = cache[core]
+                try:
+                    q[getIndex(element[0], block_size, modcache)].remove(element)
+                except:
+                    q[getIndex(element[0], block_size, modcache)].pop(0)
+                q[getIndex(element[0], block_size, modcache)].append(element)
+                cache[core] = q
 
-                load_store_instructions += 1
-                extra_cycles += MEMORY_TO_CACHE
-                idle_cycles += MEMORY_TO_CACHE
+        elif element[1] == "I":
+            if move == "PR":
+                misses_core += 1
+                tf = False
+                for i in range(len(cache)):
+                    if i != core and tf == False:
+                        for j in range(len(cache[i][getIndex(int(f_contents[cycle][2:-1], base=16), block_size, modcache)])):
+                            if cache[i][getIndex(int(f_contents[cycle][2:-1], base=16), block_size, modcache)][j][0] == int(f_contents[cycle][2:-1], base = 16) and cache[i][getIndex(int(f_contents[cycle][2:-1], base=16), block_size, modcache)][j][1] != "I" and tf == False:
+                                bus_transfers += 1
+                                change_state(cache[i][getIndex(int(f_contents[cycle][2:-1], base=16), block_size, modcache)][j], cycle, "BR", i, idle_cycles, misses_core, bus_transfers, invalidations, private_data_accesses, shared_data_accesses)
+                                delay(CACHE_TO_CACHE * block_size / 4 + CACHE_HIT)
+                                idle_cycles += CACHE_TO_CACHE * block_size / 4 + CACHE_HIT                                
+                                if element[0] == None:
+                                    q = cache[core]
+                                    q[getIndex(int(f_contents[cycle][2:-1], base=16), block_size, modcache)].pop(0)
+                                    element = [int(f_contents[cycle][2:-1], base=16), "S"]
+                                    q[getIndex(int(f_contents[cycle][2:-1], base=16), block_size, modcache)].append(element)
+                                    cache[core] = q
+                                else:
+                                    q = cache[core]
+                                    try:
+                                        q[getIndex(int(f_contents[cycle][2:-1], base=16), block_size, modcache)].remove(element)
+                                    except:
+                                        q[getIndex(int(f_contents[cycle][2:-1], base=16), block_size, modcache)].pop(0)
+                                    element = [int(f_contents[cycle][2:-1], base=16), "S"]
+                                    q[getIndex(int(f_contents[cycle][2:-1], base=16), block_size, modcache)].append(element)
+                                    cache[core] = q
+                                tf = True
 
-            elif f_contents[cycle][0] == DELAY:
-                extra_cycles += int(f_contents[cycle][2:-1], base = 16)
-                compute_cycles += int(f_contents[cycle][2:-1], base = 16)
-                idle_cycles += int(f_contents[cycle][2:-1], base = 16)
+                if tf == False:
+                    delay(MEMORY_TO_CACHE + CACHE_HIT)
+                    idle_cycles += MEMORY_TO_CACHE + CACHE_HIT
+                    if element[0] == None:
+                        q = cache[core]
+                        q[getIndex(int(f_contents[cycle][2:-1], base=16), block_size, modcache)].pop(0)
+                        element = [int(f_contents[cycle][2:-1], base=16), "E"]
+                        q[getIndex(int(f_contents[cycle][2:-1], base=16), block_size, modcache)].append(element)
+                        cache[core] = q
+                    else:
+                        q = cache[core]
+                        try:
+                            q[getIndex(int(f_contents[cycle][2:-1], base=16), block_size, modcache)].remove(element)
+                        except:
+                            q[getIndex(int(f_contents[cycle][2:-1], base=16), block_size, modcache)].pop(0)
+                        element = [int(f_contents[cycle][2:-1], base=16), "E"]
+                        q[getIndex(int(f_contents[cycle][2:-1], base=16), block_size, modcache)].append(element)
+                        cache[core] = q
+
+            elif move == "PW":
+                if element[0] == None:
+                    misses_core += 1
+                    q = cache[core]
+                    q[getIndex(int(f_contents[cycle][2:-1], base=16), block_size, modcache)].pop(0)
+                    element = [int(f_contents[cycle][2:-1], base=16), "M"]
+                    q[getIndex(int(f_contents[cycle][2:-1], base=16), block_size, modcache)].append(element)
+                    cache[core] = q
+                else:
+                    q = cache[core]
+                    try:
+                        q[getIndex(int(f_contents[cycle][2:-1], base=16), block_size, modcache)].remove(element)
+                    except:
+                        q[getIndex(int(f_contents[cycle][2:-1], base=16), block_size, modcache)].pop(0)
+                    element = [int(f_contents[cycle][2:-1], base=16), "M"]
+                    q[getIndex(int(f_contents[cycle][2:-1], base=16), block_size, modcache)].append(element)
+                    cache[core] = q
+
+                for i in range(len(cache)):
+                    if i != core:
+                        for j in range(len(cache[i][getIndex(int(f_contents[cycle][2:-1], base=16), block_size, modcache)])):
+                            if cache[i][getIndex(int(f_contents[cycle][2:-1], base=16), block_size, modcache)][j][0] == int(f_contents[cycle][2:-1], base=16):
+                                invalidations += 1
+                                bus_transfers += 1
+                                change_state(cache[i][getIndex(int(f_contents[cycle][2:-1], base=16), block_size, modcache)][j], cycle, "BRX", i, idle_cycles, misses_core, bus_transfers, invalidations, private_data_accesses, shared_data_accesses)
+
+        return idle_cycles, misses_core, bus_transfers, invalidations, private_data_accesses, shared_data_accesses
+
+    # Iteration for one core
+    while cycle < total_lines:
+        if f_contents[cycle][0] == LOAD:
+            load_store_instructions += 1
+            tf = False
+            for i in range(len(cache[n][getIndex(int(f_contents[cycle][2:-1], base=16), block_size, modcache)])):
+                if cache[n][getIndex(int(f_contents[cycle][2:-1], base=16), block_size, modcache)][i][0] == int(f_contents[cycle][2:-1], base=16):
+                    tf = True
+
+                    idle_cycles, misses_core, bus_transfers, invalidations, private_data_accesses, shared_data_accesses = change_state(cache[n][getIndex(int(f_contents[cycle][2:-1], base=16), block_size, modcache)][i], cycle, "PR", n, idle_cycles, misses_core, bus_transfers, invalidations, private_data_accesses, shared_data_accesses)
+
+            if tf == False:
+                element = [None, "I"]
+                idle_cycles, misses_core, bus_transfers, invalidations, private_data_accesses, shared_data_accesses = change_state(element, cycle, "PR", n, idle_cycles, misses_core, bus_transfers, invalidations, private_data_accesses, shared_data_accesses)    
+
+        elif f_contents[cycle][0] == STORE:
+            load_store_instructions += 1
+            tf = False
+            for i in range(len(cache[n][getIndex(int(f_contents[cycle][2:-1], base=16), block_size, modcache)])):
+                if cache[n][getIndex(int(f_contents[cycle][2:-1], base=16), block_size, modcache)][i][0] == int(f_contents[cycle][2:-1], base=16):
+                    tf = True
+                    idle_cycles, misses_core, bus_transfers, invalidations, private_data_accesses, shared_data_accesses = change_state(cache[n][getIndex(int(f_contents[cycle][2:-1], base=16), block_size, modcache)][i], cycle, "PW", n, idle_cycles, misses_core, bus_transfers, invalidations, private_data_accesses, shared_data_accesses)
+
+            if tf == False:
+                element = [None, "I"]
+                idle_cycles, misses_core, bus_transfers, invalidations, private_data_accesses, shared_data_accesses = change_state(element, cycle, "PW", n, idle_cycles, misses_core, bus_transfers, invalidations, private_data_accesses, shared_data_accesses)
+
+        elif f_contents[cycle][0] == DELAY:
+            delay_dec = int(f_contents[cycle][2:-1], base=16)
+            delay(delay_dec)
+            compute_cycles += delay_dec
             
-            else: 
-                raise Exception("Invalid operation")
+        else: 
+            raise Exception("Invalid operation")
+        
+        
+        cycle += 1
 
-    return (cycle + idle_cycles), compute_cycles, load_store_instructions, idle_cycles
+        if (cycle % 500000) == 0:
+            print("Cycle: " + str(cycle))
+    print(cache[n])
+    print((n, (cycle + compute_cycles + idle_cycles), compute_cycles, load_store_instructions, idle_cycles, float(misses_core)/float(load_store_instructions), (bus_transfers * block_size), invalidations, private_data_accesses, shared_data_accesses))
+        
 
 def getIndex(address, block_size, modcache):
     return math.floor((int(address) / block_size) % modcache)
@@ -120,35 +297,40 @@ def Dragon(n, input_file, cache_size, associativity, block_size):
     
 
 
-# if len(sys.argv) != 6:
-#     raise Exception("Invalid number of arguments.")
+if len(sys.argv) != 6:
+    raise Exception("Invalid number of arguments.")
 
-# protocol = sys.argv[1]
-# input_file = sys.argv[2]
-# cache_size = sys.argv[3]
-# associativity = sys.argv[4]
-# block_size = sys.argv[5]
+protocol = sys.argv[1]
+input_file = sys.argv[2]
+cache_size = sys.argv[3]
+associativity = sys.argv[4]
+block_size = sys.argv[5]
 
-protocol = "MESI"
-input_file = "blacksholes"
-cache_size = 4096
-associativity = 2
-block_size = 32
+block_size = int(block_size)
+modcache = int((int(cache_size) / block_size) / int(associativity))
+p_cache = {}
+for key in range(modcache):
+    p_cache[key] = [[None, "I"] for i in range(int(associativity))]
 
 manager = Manager()
-d = manager.list()
+cache = manager.list()
+for i in range(4):
+    cache.append(p_cache)
+
 
 if protocol == "MESI":
     p = [None,None,None,None]
     for n in range(4):
-        p[n] = Process(target=MESI, args=(n, input_file, cache_size, associativity, block_size, d))
+        p[n] = Process(target=MESI, args=(n, input_file, block_size, modcache, cache))
         p[n].start()
+    
+    for n in range(4):
         p[n].join()
 
 elif protocol == "Dragon":
     p = [None,None,None,None]
     for n in range(4):
-        p[n] = Process(target=Dragon, args=(n, input_file, cache_size, associativity, block_size))
+        p[n] = Process(target=Dragon, args=(n, input_file, cache_size, associativity, block_size, cache))
         p[n].start()
         p[n].join()
 
