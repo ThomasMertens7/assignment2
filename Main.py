@@ -26,10 +26,12 @@ def MESI(n, input_file, block_size, modcache, cache):
     # Set up help variables
     total_lines = len(f_contents)
 
+    # Every time we have a delay go a couple of extra_cycles times through loop
     def delay(extra_cycles):
         while extra_cycles > 0:
             extra_cycles -= 1
 
+    # Based on the element and the move we process, change state of all elements influenced by this
     def change_state(element, cycle, move, core, idle_cycles, misses_core, bus_transfers, invalidations, private_data_accesses, shared_data_accesses):
         if element[1] == "M":
             if move == "PR":
@@ -282,8 +284,11 @@ def MESI(n, input_file, block_size, modcache, cache):
         
         cycle += 1
 
+    # Nice to see how progress is going
         if (cycle % 500000) == 0:
             print("Cycle: " + str(cycle))
+
+    # Prints output at end of execution
     print(cache[n])
     print((n, (cycle + compute_cycles + idle_cycles), compute_cycles, load_store_instructions, idle_cycles, float(misses_core)/float(load_store_instructions), (bus_transfers * block_size), invalidations, private_data_accesses, shared_data_accesses))
         
@@ -306,18 +311,20 @@ cache_size = sys.argv[3]
 associativity = sys.argv[4]
 block_size = sys.argv[5]
 
+# Develop the virtual cache model
 block_size = int(block_size)
 modcache = int((int(cache_size) / block_size) / int(associativity))
 p_cache = {}
 for key in range(modcache):
     p_cache[key] = [[None, "I"] for i in range(int(associativity))]
 
+# Develop a shared variable of the cache model, so that all processes can access it
 manager = Manager()
 cache = manager.list()
 for i in range(4):
     cache.append(p_cache)
 
-
+# If protocol is MESI, then run MESI in parallel for each core
 if protocol == "MESI":
     p = [None,None,None,None]
     for n in range(4):
@@ -327,6 +334,7 @@ if protocol == "MESI":
     for n in range(4):
         p[n].join()
 
+# If protocol is Dragon, then run Dragon in parallel for each core
 elif protocol == "Dragon":
     p = [None,None,None,None]
     for n in range(4):
