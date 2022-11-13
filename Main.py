@@ -179,7 +179,7 @@ def MESI(n, input_file, block_size, modcache, cache):
                         for j in range(len(cache[i][getIndex(int(f_contents[cycle][2:-1], base=16), block_size, modcache)])):
                             if cache[i][getIndex(int(f_contents[cycle][2:-1], base=16), block_size, modcache)][j][0] == int(f_contents[cycle][2:-1], base = 16) and cache[i][getIndex(int(f_contents[cycle][2:-1], base=16), block_size, modcache)][j][1] != "I" and tf == False:
                                 bus_transfers += 1
-                                change_state(cache[i][getIndex(int(f_contents[cycle][2:-1], base=16), block_size, modcache)][j], cycle, "BR", i, idle_cycles, misses_core, bus_transfers, invalidations, private_data_accesses, shared_data_accesses)
+                                idle_cycles, misses_core, bus_transfers, invalidations, private_data_accesses, shared_data_accesses = change_state(cache[i][getIndex(int(f_contents[cycle][2:-1], base=16), block_size, modcache)][j], cycle, "BR", i, idle_cycles, misses_core, bus_transfers, invalidations, private_data_accesses, shared_data_accesses)
                                 delay(CACHE_TO_CACHE * block_size / 4 + CACHE_HIT)
                                 idle_cycles += CACHE_TO_CACHE * block_size / 4 + CACHE_HIT                                
                                 if element[0] == None:
@@ -242,7 +242,7 @@ def MESI(n, input_file, block_size, modcache, cache):
                             if cache[i][getIndex(int(f_contents[cycle][2:-1], base=16), block_size, modcache)][j][0] == int(f_contents[cycle][2:-1], base=16):
                                 invalidations += 1
                                 bus_transfers += 1
-                                change_state(cache[i][getIndex(int(f_contents[cycle][2:-1], base=16), block_size, modcache)][j], cycle, "BRX", i, idle_cycles, misses_core, bus_transfers, invalidations, private_data_accesses, shared_data_accesses)
+                                idle_cycles, misses_core, bus_transfers, invalidations, private_data_accesses, shared_data_accesses = change_state(cache[i][getIndex(int(f_contents[cycle][2:-1], base=16), block_size, modcache)][j], cycle, "BRX", i, idle_cycles, misses_core, bus_transfers, invalidations, private_data_accesses, shared_data_accesses)
 
         return idle_cycles, misses_core, bus_transfers, invalidations, private_data_accesses, shared_data_accesses
 
