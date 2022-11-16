@@ -12,11 +12,11 @@
             "console": "integratedTerminal",
             "justMyCode": true,
             "args": [
-                "MESI",
-                "blackscholes",
-                "4096",
-                "2",
-                "32",
+                "Dragon",
+                "bodytrack",
+                "1024",
+                "1",
+                "16",
             ]
         }
     ]
