@@ -327,7 +327,6 @@ def Dragon(n, input_file, block_size, modcache, cache, associativity):
     
     # Based on the element and the move we process, change state of all elements influenced by this
     def change_state(element, cycle, move, core, idle_cycles, misses_core, bus_transfers, invalidations, private_data_accesses, shared_data_accesses):
-        #print("changing state")
         if element[1] == "M":
             if move == "PR":
                 private_data_accesses += 1
@@ -336,9 +335,9 @@ def Dragon(n, input_file, block_size, modcache, cache, associativity):
                 idle_cycles += CACHE_HIT
                 q = cache[core]
                 try:
-                    q[getIndex(int(f_contents[cycle][2:-1], base=16), block_size, modcache)].remove(element)
+                    q[getIndex(element[0], block_size, modcache)].remove(element)
                 except:
-                    q[getIndex(int(f_contents[cycle][2:-1], base=16), block_size, modcache)].pop(0)
+                    q[getIndex(element[0], block_size, modcache)].pop(0)
                 q[getIndex(int(f_contents[cycle][2:-1], base=16), block_size, modcache)].append(element)
                 cache[core] = q
 
@@ -346,9 +345,9 @@ def Dragon(n, input_file, block_size, modcache, cache, associativity):
                 private_data_accesses += 1
                 q = cache[core]
                 try:
-                    q[getIndex(int(f_contents[cycle][2:-1], base=16), block_size, modcache)].remove(element)
+                    q[getIndex(element[0], block_size, modcache)].remove(element)
                 except:
-                    q[getIndex(int(f_contents[cycle][2:-1], base=16), block_size, modcache)].pop(0)
+                    q[getIndex(element[0], block_size, modcache)].pop(0)
                 q[getIndex(int(f_contents[cycle][2:-1], base=16), block_size, modcache)].append(element)
                 cache[core] = q
 
@@ -362,7 +361,7 @@ def Dragon(n, input_file, block_size, modcache, cache, associativity):
                 element[1] == "Sm"
                 q[getIndex(element[0], block_size, modcache)].append(element)
                 cache[core] = q
-            elif move == "BU": #should never be invoked
+            elif move == "BU":
                 pass
             else: print("illegal move")
         elif element[1] == "E":
@@ -372,9 +371,9 @@ def Dragon(n, input_file, block_size, modcache, cache, associativity):
                 idle_cycles += CACHE_HIT
                 q = cache[core]
                 try:
-                    q[getIndex(int(f_contents[cycle][2:-1], base=16), block_size, modcache)].remove(element)
+                    q[getIndex(element[0], block_size, modcache)].remove(element)
                 except:
-                    q[getIndex(int(f_contents[cycle][2:-1], base=16), block_size, modcache)].pop(0)
+                    q[getIndex(element[0], block_size, modcache)].pop(0)
                 q[getIndex(int(f_contents[cycle][2:-1], base=16), block_size, modcache)].append(element)
                 cache[core] = q
             elif move == "BR":
@@ -391,13 +390,13 @@ def Dragon(n, input_file, block_size, modcache, cache, associativity):
                 shared_data_accesses += 1
                 q = cache[core]
                 try:
-                    q[getIndex(int(f_contents[cycle][2:-1], base=16), block_size, modcache)].remove(element)
+                    q[getIndex(element[0], block_size, modcache)].remove(element)
                 except:
-                    q[getIndex(int(f_contents[cycle][2:-1], base=16), block_size, modcache)].pop(0)
+                    q[getIndex(element[0], block_size, modcache)].pop(0)
                 q[getIndex(int(f_contents[cycle][2:-1], base=16), block_size, modcache)].append(element)
                 element[1] == "M"
                 cache[core] = q
-            elif move == "BU": #should never be invoked
+            elif move == "BU":
                 pass
             else: print("illegal move")
         elif element[1] == "Sc":
@@ -407,19 +406,19 @@ def Dragon(n, input_file, block_size, modcache, cache, associativity):
                 idle_cycles += CACHE_HIT
                 q = cache[core]
                 try:
-                    q[getIndex(int(f_contents[cycle][2:-1], base=16), block_size, modcache)].remove(element)
+                    q[getIndex(element[0], block_size, modcache)].remove(element)
                 except:
-                    q[getIndex(int(f_contents[cycle][2:-1], base=16), block_size, modcache)].pop(0)
+                    q[getIndex(element[0], block_size, modcache)].pop(0)
                 q[getIndex(int(f_contents[cycle][2:-1], base=16), block_size, modcache)].append(element)
                 cache[core] = q
 
-            elif move == "PW": # different type busupdate based on the S or S'
+            elif move == "PW":
                 shared_data_accesses += 1
                 q = cache[core]
                 try:
-                    q[getIndex(int(f_contents[cycle][2:-1], base=16), block_size, modcache)].remove(element)
+                    q[getIndex(element[0], block_size, modcache)].remove(element)
                 except:
-                    q[getIndex(int(f_contents[cycle][2:-1], base=16), block_size, modcache)].pop(0)
+                    q[getIndex(element[0], block_size, modcache)].pop(0)
                 q[getIndex(int(f_contents[cycle][2:-1], base=16), block_size, modcache)].append(element)
                 element[1] == "Sm"
                 cache[core] = q
@@ -438,7 +437,7 @@ def Dragon(n, input_file, block_size, modcache, cache, associativity):
                 q[getIndex(element[0], block_size, modcache)].append(element)
                 cache[core] = q
 
-            elif move == "BU": #Is this actually the right strategy for BusUpdate?
+            elif move == "BU": 
                 bus_transfers+=1
                 delay(CACHE_TO_CACHE)
                 idle_cycles += CACHE_TO_CACHE
@@ -457,18 +456,18 @@ def Dragon(n, input_file, block_size, modcache, cache, associativity):
                 idle_cycles += CACHE_HIT
                 q = cache[core]
                 try:
-                    q[getIndex(int(f_contents[cycle][2:-1], base=16), block_size, modcache)].remove(element)
+                    q[getIndex(element[0], block_size, modcache)].remove(element)
                 except:
-                    q[getIndex(int(f_contents[cycle][2:-1], base=16), block_size, modcache)].pop(0)
+                    q[getIndex(element[0], block_size, modcache)].pop(0)
                 q[getIndex(int(f_contents[cycle][2:-1], base=16), block_size, modcache)].append(element)
                 cache[core] = q
             elif move == "PW":
                 shared_data_accesses += 1
                 q = cache[core]
                 try:
-                    q[getIndex(int(f_contents[cycle][2:-1], base=16), block_size, modcache)].remove(element)
+                    q[getIndex(element[0], block_size, modcache)].remove(element)
                 except:
-                    q[getIndex(int(f_contents[cycle][2:-1], base=16), block_size, modcache)].pop(0)
+                    q[getIndex(element[0], block_size, modcache)].pop(0)
                 q[getIndex(int(f_contents[cycle][2:-1], base=16), block_size, modcache)].append(element)
                 cache[core] = q
                 for i in range(len(cache)):
@@ -485,7 +484,7 @@ def Dragon(n, input_file, block_size, modcache, cache, associativity):
                     q[getIndex(element[0], block_size, modcache)].pop(0)
                 q[getIndex(element[0], block_size, modcache)].append(element)
                 cache[core] = q
-            elif move == "BU": #Is this actually the right strategy for BusUpdate?
+            elif move == "BU":
                 bus_transfers+=1
                 delay(CACHE_TO_CACHE)
                 idle_cycles += CACHE_TO_CACHE
@@ -504,16 +503,12 @@ def Dragon(n, input_file, block_size, modcache, cache, associativity):
             
 
     # Iteration for one core
-    while cycle < total_lines: #CHANGE THIS BACK FOR FULL WORKLOAD
+    while cycle < total_lines:
         if f_contents[cycle][0] == LOAD:
             load_store_instructions += 1
             tf = False
             for i in range(len(cache[n][getIndex(int(f_contents[cycle][2:-1], base=16), block_size, modcache)])):
-                #print("comparing to see if it's in the cache")
-                #print(cache[n][getIndex(int(f_contents[cycle][2:-1], base=16), block_size, modcache)][i][0])
-                #print(int(f_contents[cycle][2:-1], base=16))
                 if (i < len(cache[n][getIndex(int(f_contents[cycle][2:-1], base=16), block_size, modcache)])) and (cache[n][getIndex(int(f_contents[cycle][2:-1], base=16), block_size, modcache)][i][0] == int(f_contents[cycle][2:-1], base=16)):
-                    #print("true for tf")
                     tf = True
                     idle_cycles, misses_core, bus_transfers, invalidations, private_data_accesses, shared_data_accesses = change_state(cache[n][getIndex(int(f_contents[cycle][2:-1], base=16), block_size, modcache)][i], cycle, "PR", n, idle_cycles, misses_core, bus_transfers, invalidations, private_data_accesses, shared_data_accesses)
 
@@ -535,12 +530,10 @@ def Dragon(n, input_file, block_size, modcache, cache, associativity):
                     idle_cycles += MEMORY_TO_CACHE
                     element = [int(f_contents[cycle][2:-1], base=16), "E"]
                 q=cache[n]
-                if len(q[getIndex(int(f_contents[cycle][2:-1], base=16), block_size, modcache)]) == associativity:
-                    q[getIndex(int(f_contents[cycle][2:-1], base=16), block_size, modcache)].pop(0)
+                q[getIndex(int(f_contents[cycle][2:-1], base=16), block_size, modcache)].pop(0)
                 q[getIndex(int(f_contents[cycle][2:-1], base=16), block_size, modcache)].append(element)
                 cache[n] = q
-                #print(cache[n])
-                #print(cache[n][getIndex(int(f_contents[cycle][2:-1], base=16), block_size, modcache)])
+
         elif f_contents[cycle][0] == STORE:
             load_store_instructions += 1
             tf = False
@@ -566,8 +559,7 @@ def Dragon(n, input_file, block_size, modcache, cache, associativity):
                 else:
                     element = [int(f_contents[cycle][2:-1], base=16), "M"]
                 q=cache[n]
-                if len(q[getIndex(int(f_contents[cycle][2:-1], base=16), block_size, modcache)]) == associativity:
-                    q[getIndex(int(f_contents[cycle][2:-1], base=16), block_size, modcache)].pop(0)
+                q[getIndex(int(f_contents[cycle][2:-1], base=16), block_size, modcache)].pop(0)
                 q[getIndex(int(f_contents[cycle][2:-1], base=16), block_size, modcache)].append(element)
                 cache[n] = q
         elif f_contents[cycle][0] == DELAY:
@@ -582,9 +574,11 @@ def Dragon(n, input_file, block_size, modcache, cache, associativity):
         cycle += 1
 
 
-            # Nice to see how progress is going
-        if (cycle % 500000) == 0:
+        # Nice to see how progress is going
+        if (cycle % 10000) == 0:
             print("Cycle: " + str(cycle))
+
+    
 
     # Prints output at end of execution
     print(cache[n])
@@ -939,8 +933,7 @@ def MOESI(n, input_file, block_size, modcache, cache):
         if (cycle % 500000) == 0:
             print("Cycle: " + str(cycle))
 
-        if (cycle % 50000) == 0:
-            print((n, (cycle + compute_cycles + idle_cycles), compute_cycles, load_store_instructions, idle_cycles, float(misses_core)/float(load_store_instructions), (bus_transfers * block_size), invalidations, private_data_accesses, shared_data_accesses))
+
     # Prints output at end of execution
     print(cache[n])
     print((n, (cycle + compute_cycles + idle_cycles), compute_cycles, load_store_instructions, idle_cycles, float(misses_core)/float(load_store_instructions), (bus_transfers * block_size), invalidations, private_data_accesses, shared_data_accesses))
@@ -987,7 +980,7 @@ if __name__ == '__main__':
     elif protocol == "Dragon":
 
         for key in range(modcache):
-            p_cache[key] = []
+            p_cache[key] = [[None, None] for i in range(int(associativity))]
         for i in range(4):
             cache.append(p_cache)
         p = [None,None,None,None]
