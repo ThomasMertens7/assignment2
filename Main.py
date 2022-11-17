@@ -259,7 +259,6 @@ def MESI(n, input_file, block_size, modcache, cache):
                     idle_cycles, misses_core, bus_transfers, invalidations, private_data_accesses, shared_data_accesses = change_state(cache[n][getIndex(int(f_contents[cycle][2:-1], base=16), block_size, modcache)][i], cycle, "PR", n, idle_cycles, misses_core, bus_transfers, invalidations, private_data_accesses, shared_data_accesses)
 
             if tf == False:
-                print("tf stayed false")
                 element = [None, "I"]
                 idle_cycles, misses_core, bus_transfers, invalidations, private_data_accesses, shared_data_accesses = change_state(element, cycle, "PR", n, idle_cycles, misses_core, bus_transfers, invalidations, private_data_accesses, shared_data_accesses)    
 
@@ -354,6 +353,7 @@ def Dragon(n, input_file, block_size, modcache, cache, associativity):
                 cache[core] = q
 
             elif move == "BR":
+                bus_transfers += 1
                 q = cache[core]
                 try:
                     q[getIndex(element[0], block_size, modcache)].remove(element)
@@ -378,6 +378,7 @@ def Dragon(n, input_file, block_size, modcache, cache, associativity):
                 q[getIndex(int(f_contents[cycle][2:-1], base=16), block_size, modcache)].append(element)
                 cache[core] = q
             elif move == "BR":
+                bus_transfers += 1
                 q = cache[core]
                 try:
                     q[getIndex(element[0], block_size, modcache)].remove(element)
@@ -428,6 +429,7 @@ def Dragon(n, input_file, block_size, modcache, cache, associativity):
                             if cache[i][getIndex(int(f_contents[cycle][2:-1], base=16), block_size, modcache)][j][0] == int(f_contents[cycle][2:-1], base=16):
                                 idle_cycles, misses_core, bus_transfers, invalidations, private_data_accesses, shared_data_accesses = change_state(cache[i][getIndex(int(f_contents[cycle][2:-1], base=16), block_size, modcache)][j], cycle, "BU", i, idle_cycles, misses_core, bus_transfers, invalidations, private_data_accesses, shared_data_accesses)
             elif move == "BR":
+                bus_transfers += 1
                 q = cache[core]
                 try:
                     q[getIndex(element[0], block_size, modcache)].remove(element)
@@ -474,7 +476,8 @@ def Dragon(n, input_file, block_size, modcache, cache, associativity):
                         for j in range(len(cache[i][getIndex(int(f_contents[cycle][2:-1], base=16), block_size, modcache)])):
                             if cache[i][getIndex(int(f_contents[cycle][2:-1], base=16), block_size, modcache)][j][0] == int(f_contents[cycle][2:-1], base=16):
                                 idle_cycles, misses_core, bus_transfers, invalidations, private_data_accesses, shared_data_accesses = change_state(cache[i][getIndex(int(f_contents[cycle][2:-1], base=16), block_size, modcache)][j], cycle, "BU", i, idle_cycles, misses_core, bus_transfers, invalidations, private_data_accesses, shared_data_accesses)
-            elif move == "BR": # Is the flush in any way accounted for?
+            elif move == "BR":
+                bus_transfers += 1
                 q = cache[core]
                 try:
                     q[getIndex(element[0], block_size, modcache)].remove(element)
@@ -483,7 +486,6 @@ def Dragon(n, input_file, block_size, modcache, cache, associativity):
                 q[getIndex(element[0], block_size, modcache)].append(element)
                 cache[core] = q
             elif move == "BU": #Is this actually the right strategy for BusUpdate?
-                print("BUS UPDATE BB")
                 bus_transfers+=1
                 delay(CACHE_TO_CACHE)
                 idle_cycles += CACHE_TO_CACHE
